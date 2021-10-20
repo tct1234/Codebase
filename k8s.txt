@@ -1,0 +1,145 @@
+
+
+
+
+https://kubernetes.io/docs/setup/production-environment/container-runtimes/#docker
+https://docs.docker.com/engine/install/ubuntu/
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/
+
+
+---------------------COMMANDS--------
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+
+echo \
+  "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+
+ sudo apt-get update
+
+ sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+sudo docker run hello-world
+
+-------------------------------------
+
+Configure the Docker daemon, in particular to use systemd for the management of the container’s cgroups.
+
+sudo mkdir /etc/docker
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+
+sudo systemctl enable docker
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+--------------------------------
+
+
+
+    Update the apt package index and install packages needed to use the Kubernetes apt repository:
+
+    sudo apt-get update
+    sudo apt-get install -y apt-transport-https ca-certificates curl
+
+    Download the Google Cloud public signing key:
+
+    sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+
+    Add the Kubernetes apt repository:
+
+    echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+    Update apt package index, install kubelet, kubeadm and kubectl, and pin their version:
+
+    sudo apt-get update
+    sudo apt-get install -y kubelet kubeadm kubectl
+    sudo apt-mark hold kubelet kubeadm kubectl
+
+------------------------------------------------------
+
+sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+sudo swapoff -a
+
+CALICO CNI
+https://docs.projectcalico.org/getting-started/kubernetes/quickstart
+
+
+kubeadm init --pod-network-cidr=10.0.0.0/16
+
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+
+Note: Before creating this manifest, read its contents and make sure its settings are correct for your environment. For example, you may need to change the default IP pool CIDR to match your pod network CIDR.
+
+kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+
+
+kubectl get nodes -o wide
+watch kubectl get pods -n calico-system
+
+
+===================================
+
+f you want to connect to the API Server from outside the cluster you can use kubectl proxy:
+
+scp root@ms-VPCEG15EN:/etc/kubernetes/admin.conf .
+kubectl --kubeconfig ./admin.conf proxy
+
+cp /etc/kubernetes/admin.conf .
+
+
+===============================
+
+https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#backing-up-an-etcd-cluster
+
+ETCDCTL_API=3 etcdctl --endpoints 192.168.43.222:2379   --cert=/etc/kubernetes/pki/etcd/server.crt   --key=/etc/kubernetes/pki/etcd/server.key   --cacert=/etc/kubernetes/pki/etcd/ca.crt   member list
+888b163dab65caed, started, ms-vpceg15en, https://192.168.43.222:2380, https://192.168.43.222:2379
+
+https://github.com/MohanRamadoss/ckapractise/tree/master/CKALab%20aug%202020/CKA/backup-and-restore-methods
+
+$ export ETCDCTL_API=3
+$ etcdctl --endpoints=https://[127.0.0.1]:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key snapshot save /tmp/snapshot-pre-boot.db
+
+
+
+
+================================
+
+jenkins installation
+===============================
+helm install  -f values.yaml jenkins bitnami/jenkins
+
+export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services jenkins)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "Jenkins URL: http://$NODE_IP:$NODE_PORT/"
+
+
+2. Login with the following credentials
+
+  echo Username: user
+  echo Password: $(kubectl get secret --namespace default jenkins -o jsonpath="{.data.jenkins-password}" | base64 --decode)
+VnglkMxAMK
+
+
+
