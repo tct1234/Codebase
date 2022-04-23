@@ -1,0 +1,152 @@
+
+
+Linux basic commands:
+##################################
+
+ df command
+Use df -- system’s disk space usage, shown in percentage and KBs. If you want to see the report in megabytes, type df -m
+
+diff file1.ext file2.ext
+
+SIGTERM (15) — requests a program to stop running and gives it some time to save all of its progress. If you don’t specify the signal when entering the kill command, this signal will be used.
+SIGKILL (9) — forces programs to stop immediately. Unsaved progress will be lost.
+
+kill [signal option] PID.
+
+ top command will display a list of running processes and how much CPU each process use
+ 
+ ps -ef
+ 
+ The command below will help us see if the port 22 is open on the host 192.168.56.5.
+
+$ nc -zv 192.168.1.5 22
+$ netstat -a | more
+
+passwd command is used to create/update passwords for user accounts
+
+pidof displays the process ID of a running program/command
+
+# ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head
+
+scp ~/names.txt root@192.168.56.10:/root/names.txt
+
+$ tar -czf home.tar.gz .
+
+uname command displays system information such as operating system, network node hostname kernel name, version and release etc
+
+$ uname -a
+
+which command displays the absolute path (pathnames) of the files (or possibly links) which would be executed in the current environmen
+
+$ tar cf - . | zip | dd of=/dev/nrst0 obs=16k
+$ zip inarchive.zip foo.c bar.c --out outarchive.zip
+$ tar cf - .| zip backup -
+
+$ alias home='cd /home/tecmint/public_html'
+The above command will create an alias called home for /home/tecmint/public_html directory, so whenever you type home in the terminal prompt, it will put you in the /home/tecmint/public_html directory
+
+ARP (Address Resolution Protocol) is a protocol that maps IP network addresses of a network neighbor with the hardware (MAC) addresses in an IPv4 network.
+
+You can use it as below to find all alive hosts on a network:
+
+$ sudo arp-scan --interface=enp2s0 --localnet 
+
+Awk is a powerful programming language created for text processing and generally used as a data extraction and reporting tool.
+
+$ awk '//{print}'/etc/hosts
+
+$ chgrp tecmint users.txt
+chmod Command
+chmod command is used to change/update file access permissions like this.
+
+$ chmod +x sysinfo.sh
+chown Command
+chown command changes/updates the user and group ownership of a file/directory like this.
+
+$ chmod -R www-data:www-data /var/www/html
+
+cmp performs a byte-by-byte comparison of two files like this.
+
+$ cmp file1 file2
+
+env command lists all the current environment variables and used to set them as well.
+
+$ env
+
+free command shows the system memory usage (free, used, swapped, cached, etc.) in the system including swap spa
+
+$ hostnamectl
+$ sudo hostnamectl set-hostname NEW_HOSTNAME
+
+
+ifconfig Command
+ifconfig command is used to configure a Linux systems network interfaces. It is used to configure, view and control network interfaces.
+
+$ ifconfig
+$ sudo ifconfig eth0 up
+$ sudo ifconfig eth0 down
+$ sudo ifconfig eth0 172.16.25.125
+
+ip Command
+ip command is used to display or manage routing, devices, policy routing and tunnels. It also works as a replacement for well known ifconfig command.
+
+This command will assign an IP address to a specific interface (eth1 in this case).
+
+$ sudo ip addr add 192.168.56.10 dev eth1
+iptables Command
+iptables is a terminal based firewall for managing incoming and outgoing traffic via a set of configurable table rules.
+
+The command below is used to check existing rules on a system (using it may require root privileges).
+
+$ sudo iptables -L -n -v
+
+
+kill command is used to kill a process using its PID by sending a signal to it (default signal for kill is TERM).
+
+$ kill -p 2300
+$ kill -SIGTERM -p 2300
+
+ln command is used to create a soft link between files using the -s flag like this.
+
+$ ln -s /usr/bin/lscpu cpuinfo
+
+
+
+###########################################################
+    HELM
+###################################
+
+helm install -f values.yaml bitnami/wordpress --generate-name
+
+helm get values <release-name>
+
+  --set nodeSelector."kubernetes\.io/role"=master becomes:
+
+     nodeSelector:
+                kubernetes.io/role: master
+
+
+$ helm upgrade -f panda.yaml happy-panda bitnami/wordpress
+
+helm rollback [RELEASE] [REVISION].
+
+helm history [RELEASE] 
+
+$ helm create [Chart]
+
+
+
+
+
+
+
+
+
+
+
+###################################################
+
+AWS
+
+If connection draining is enabled for the load balancer, the instance stops accepting new connections and waits for existing connections to drain before completing the deregistration process
+
