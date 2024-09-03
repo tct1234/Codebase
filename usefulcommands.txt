@@ -1,0 +1,15 @@
+netstat -nplt
+ip addr
+ip addr show weave
+ip link
+ifconfig
+
+ip a | grep -B2 10.29.45.12 
+netstat -anp | grep etcd
+
+ps -aux | grep kubelet
+ls /etc/cni/net.d/
+
+ip route | grep default
+
+kubectl config view --kubeconfig=my-kube-config -o jsonpath="{.contexts[?(@.context.user=='aws-user')].name}" > /opt/outputs/aws-context-name

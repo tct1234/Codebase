@@ -1,0 +1,597 @@
+
+
+https://kubernetes.io/docs/setup/production-environment/container-runtimes/#docker
+https://docs.docker.com/engine/install/ubuntu/
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/
+
+
+---------------------COMMANDS--------
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+
+echo \
+  "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+
+ sudo apt-get update
+
+ sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+sudo docker run hello-world
+
+-------------------------------------
+
+Configure the Docker daemon, in particular to use systemd for the management of the container’s cgroups.
+
+sudo mkdir /etc/docker
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+
+sudo systemctl enable docker
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+--------------------------------
+
+
+
+    Update the apt package index and install packages needed to use the Kubernetes apt repository:
+
+    sudo apt-get update
+    sudo apt-get install -y apt-transport-https ca-certificates curl
+
+    Download the Google Cloud public signing key:
+
+    sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+
+    Add the Kubernetes apt repository:
+
+    echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+    Update apt package index, install kubelet, kubeadm and kubectl, and pin their version:
+
+    sudo apt-get update
+    sudo apt-get install -y kubelet kubeadm kubectl
+    sudo apt-mark hold kubelet kubeadm kubectl
+
+------------------------------------------------------
+
+sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+sudo swapoff -a
+
+CALICO CNI
+https://docs.projectcalico.org/getting-started/kubernetes/quickstart
+
+
+kubeadm init --pod-network-cidr=10.0.0.0/16 
+
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+
+Note: Before creating this manifest, read its contents and make sure its settings are correct for your environment. For example, you may need to change the default IP pool CIDR to match your pod network CIDR.
+
+kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yam
+
+
+kubectl get nodes -o wide
+watch kubectl get pods -n calico-system
+
+
+===================================
+
+if you want to connect to the API Server from outside the cluster you can use kubectl proxy:
+
+scp root@ms-VPCEG15EN:/etc/kubernetes/admin.conf .
+kubectl --kubeconfig ./admin.conf proxy
+
+cp /etc/kubernetes/admin.conf .
+
+
+
+-------------------------------------------------
+
+K8S -- version 1.28
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+
+https://kubernetes.io/docs/setup/production-environment/container-runtimes/
+
+https://github.com/containerd/containerd/blob/main/docs/getting-started.md
+
+wget https://github.com/containerd/containerd/releases/download/v1.6.24/containerd-1.6.24-linux-amd64.tar.gz
+
+tar Cxzvf /usr/local containerd-1.6.24-linux-amd64.tar.gz
+
+https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+
+root@msp:/usr/lib/systemd# vim /usr/lib/systemd/system/containerd.service
+root@msp:/usr/lib/systemd# systemctl daemon-reload
+systemctl enable --now containerd
+Created symlink /etc/systemd/system/multi-user.target.wants/containerd.service → /lib/systemd/system/containerd.service.
+root@msp:/usr/lib/systemd#
+
+wget https://github.com/opencontainers/runc/releases/download/v1.1.9/runc.amd64
+
+To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+
+$modprobe br_netfilter and echo '1' > /proc/sys/net/ipv4/ip_forward
+
+$ sudo kubeadm init --pod-network-cidr=192.166.0.0/16 
+kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+
+Install the Tigera Calico operator and custom resource definitions.
+
+
+-----------------
+
+root@msp:/# alias k=kubectl
+root@msp:/# alias kgp="kubectl get pods"
+root@msp:/# alias kgd="kubectl get deploy"
+root@msp:/# alias kgs="kubectl get service"
+root@msp:/# alias kge="kubectl get events"
+
+
+--------------------------------------------
+
+CKS killer coda
+
+
+We look at important Vim settings if you like to work with YAML during the K8s exams.
+
+Settings
+First create or open (if already exists) file .vimrc :
+
+vim ~/.vimrc
+Now enter (in insert-mode activated with i) the following lines:
+
+set expandtab
+set tabstop=2
+set shiftwidth=2
+Save and close the file by pressing Esc followed by :x and Enter.
+
+Explanation
+Whenever you open Vim now as the current user, these settings will be used.
+
+If you ssh onto a different server, these settings will not be transferred.
+
+Settings explained:
+
+expandtab: use spaces for tab
+tabstop: amount of spaces used for tab
+shiftwidth: amount of spaces used during indentation
+
+## Apiserver Crash
+
+The idea here is to misconfigure the Apiserver in different ways, then check possible log locations for errors.
+
+You should be very comfortable with situations where the Apiserver is not coming back up.
+
+Configure the Apiserver manifest with a new argument --this-is-very-wrong .
+
+Check if the Pod comes back up and what logs this causes.
+
+Fix the Apiserver again.
+
+
+Log Locations
+
+Log locations to check:
+
+/var/log/pods
+/var/log/containers
+crictl ps + crictl logs
+docker ps + docker logs (in case when Docker is used)
+kubelet logs: /var/log/syslog or journalctl
+
+# always make a backup !
+cp /etc/kubernetes/manifests/kube-apiserver.yaml ~/kube-apiserver.yaml.ori
+
+# make the change
+vim /etc/kubernetes/manifests/kube-apiserver.yaml
+
+# wait till container restarts
+watch crictl ps
+
+# check for apiserver pod
+k -n kube-system get pod
+
+Apiserver is not coming back, we messed up!
+
+
+# check pod logs
+cat /var/log/pods/kube-system_kube-apiserver-controlplane_a3a455d471f833137588e71658e739da/kube-apiserver/X.log
+> 2022-01-26T10:41:12.401641185Z stderr F Error: unknown flag: --this-is-very-wrong
+
+Now undo the change and continue
+
+
+# smart people use a backup
+cp ~/kube-apiserver.yaml.ori /etc/kubernetes/manifests/kube-apiserver.yaml
+
+# wait till container restarts
+watch crictl ps
+
+# check for apiserver pod
+k -n kube-system get pod
+
+
+Change the existing Apiserver manifest argument to: --etcd-servers=this-is-very-wrong .
+
+Check what the logs say, without using anything in /var .
+
+Fix the Apiserver again.
+
+
+Log Locations
+
+Log locations to check:
+
+/var/log/pods
+/var/log/containers
+crictl ps + crictl logs
+docker ps + docker logs (in case when Docker is used)
+kubelet logs: /var/log/syslog or journalctl
+Solution
+
+# always make a backup !
+cp /etc/kubernetes/manifests/kube-apiserver.yaml ~/kube-apiserver.yaml.ori
+
+# make the change
+vim /etc/kubernetes/manifests/kube-apiserver.yaml
+
+# wait till container restarts
+watch crictl ps
+
+# check for apiserver pod
+k -n kube-system get pod
+
+Apiserver is not coming back, we messed up!
+
+
+# 1) if we would check the /var directory
+cat /var/log/pods/kube-system_kube-apiserver-controlplane_e24b3821e9bdc47a91209bfb04056993/kube-apiserver/X.log
+> Err: connection error: desc = "transport: Error while dialing dial tcp: address this-is-very-wrong: missing port in address". Reconnecting...
+
+# 2) but here we want to find other ways, so we check the container logs
+crictl ps # maybe run a few times, because the apiserver container get's restarted
+crictl logs f669a6f3afda2
+> Error while dialing dial tcp: address this-is-very-wrong: missing port in address. Reconnecting...
+
+# 3) what about syslogs
+journalctl | grep apiserver # nothing specific
+cat /var/log/syslog | grep apiserver # nothing specific
+
+Now undo the change and continue
+
+
+# smart people use a backup
+cp ~/kube-apiserver.yaml.ori /etc/kubernetes/manifests/kube-apiserver.yaml
+
+# wait till container restarts
+watch crictl ps
+
+# check for apiserver pod
+k -n kube-system get pod
+
+------------------------------------
+
+AppArmor profiles are available on node01 :
+
+ apparmor_status
+
+or $ cat /sys/kernel/security/apparmor/profiles | grep  -E 'docker-default|snap.lxd.lxc|/usr/sbin/tcpdump|ftpd'
+d
+
+We need to use the annotation on Pod level, not Deployment level.
+
+ annotations:
+        container.apparmor.security.beta.kubernetes.io/httpd: localhost/docker-default
+
+Verify
+
+On node0 where actula pod runiningh ,we can run crictl ps .
+
+Then crictl inspect CONTAINER-ID | grep apparmor
+
+apparmor_parser -q <profile_file>
+
+
+# controlplane
+apparmor_parser /root/profile
+aa-status | grep docker-nginx-custom
+
+# node01
+scp /root/profile node01:/root
+ssh node01
+    apparmor_parser /root/profile
+    aa-status | grep docker-nginx-custom
+==========================
+
+openssl genrsa -out myuser.key 2048
+openssl req -new -key myuser.key -out myuser.csr -subj "/CN=myuser"
+---
+openssl x509 -req -in XXX -CA XXX -CAkey XXX -CAcreateserial -out XXX -days 500
+
+openssl x509 -req -in 60099.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out 60099.crt -days 500
+Signature ok
+
+**CAcreateserical is must seems otherwise failing
+
+==================================
+
+Context setting
+
+k config set-credentials 60099@internal.users --client-key=60099.key --client-certificate=60099.crt
+k config set-context 60099@internal.users --cluster=kubernetes --user=60099@internal.users
+k config get-contexts
+k config use-context 60099@internal.users
+k get ns # fails because no permissions, but shows the correct username returned
+
+
+
+========================
+
+kube bench
+
+# see all
+kube-bench run --targets master
+
+# or just see the one
+kube-bench run --targets master --check 1.2.20
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Run second container in first containers PID namespace
+
+docker run --name app2 --pid=container:app1 -d nginx:alpine sleep infinity
+
+We see processes of both containers in both containers
+
+docker exec app1 ps aux
+
+-------------------------------
+k -n sun run pod-ro --image=busybox:1.32.0 -oyaml --dry-run=client --command -- sh -c 'sleep 1d' > pod.yaml
+
+kubectl -n world create secret tls ingress-tls --key cert.key --cert cert.crt
+
+-------------------
+nc -v 1.1.1.1 53
+
+-----------------------------
+
+# create Namespaces
+k -n ns1 create sa pipeline
+k -n ns2 create sa pipeline
+
+# use ClusterRole view
+k get clusterrole view # there is default one
+k create clusterrolebinding pipeline-view --clusterrole view --serviceaccount ns1:pipeline --serviceaccount ns2:pipeline
+
+# manage Deployments in both Namespaces
+k create clusterrole -h # examples
+k create clusterrole pipeline-deployment-manager --verb create,delete --resource deployments
+# instead of one ClusterRole we could also create the same Role in both Namespaces
+
+k -n ns1 create rolebinding pipeline-deployment-manager --clusterrole pipeline-deployment-manager --serviceaccount ns1:pipeline
+k -n ns2 create rolebinding pipeline-deployment-manager --clusterrole pipeline-deployment-manager --serviceaccount ns2:pipeline
+
+# namespace ns1 deployment manager
+k auth can-i delete deployments --as system:serviceaccount:ns1:pipeline -n ns1 # YES
+k auth can-i create deployments --as system:serviceaccount:ns1:pipeline -n ns1 # YES
+k auth can-i update deployments --as system:serviceaccount:ns1:pipeline -n ns1 # NO
+k auth can-i update deployments --as system:serviceaccount:ns1:pipeline -n default # NO
+
+# namespace ns2 deployment manager
+k auth can-i delete deployments --as system:serviceaccount:ns2:pipeline -n ns2 # YES
+k auth can-i create deployments --as system:serviceaccount:ns2:pipeline -n ns2 # YES
+k auth can-i update deployments --as system:serviceaccount:ns2:pipeline -n ns2 # NO
+k auth can-i update deployments --as system:serviceaccount:ns2:pipeline -n default # NO
+
+⁣2) view permission in all Namespaces but not kube-system
+
+
+As of now it’s not possible to create deny-RBAC in K8s
+
+So we allow for all other Namespaces
+
+
+k get ns # get all namespaces
+k -n applications create rolebinding smoke-view --clusterrole view --user smoke
+k -n default create rolebinding smoke-view --clusterrole view --user smoke
+k -n kube-node-lease create rolebinding smoke-view --clusterrole view --user smoke
+k -n kube-public create rolebinding smoke-view --clusterrole view --user smoke
+
+⁣3) just list Secret names, no content
+
+
+This is NOT POSSIBLE using plain K8s RBAC. You might think of doing this:
+
+
+# NOT POSSIBLE: assigning "list" also allows user to read secret values
+k -n applications create role list-secrets --verb list --resource secrets
+
+k -n applications create rolebinding ...
+
+============================================================
+
+k exec sec -- dmesg | grep -i gvisor
+
+--------------
+kubectl -n one get secret s1 -ojsonpath="{.data.data}" | base64 -d
+
+kubectl -n one get secret s2 -ojsonpath="{.data.data}" | base64 -d
+
+
+----------------------------
+o verify that the token hasn't been mounted run the following commands:
+
+kubectl -n one exec -it pod-one -- mount | grep serviceaccount
+
+kubectl -n one exec -it pod-one -- cat /var/run/secrets/kubernetes.io/serviceaccount/token
+
+==================================
+For stracing syscal activity with process
+strace -p 19890 -f -cw # use your PID
+
+----------------------------
+Find process
+
+# using netstat
+apt install net-tools
+netstat -tulpan | grep 1234
+
+# using lsof
+lsof -i :1234
+Find pull path
+
+ls -lh /proc/17773/exe # use your ID instead
+Kill and delete
+
+kill 17773 # use your ID instead
+rm /usr/bin/app1
+
+----
+apt show kube-bench
+
+apt remove kube-bench
+
+-------------------------------------
+
+The package vsftpd has been installed.
+
+Don't uninstall it, just stop the service.
+
+
+Solution
+
+lsof -i :21 # show its listening
+
+service vsftpd stop
+
+lsof -i :21 # gone
+
+-----------------------------------
+
+Sha verification
+
+# download
+VERSION=$(kubelet --version | cut -d ' ' -f2)
+wget https://dl.k8s.io/$VERSION/kubernetes-server-linux-amd64.tar.gz
+tar xzf kubernetes-server-linux-amd64.tar.gz
+
+
+Tip 2
+
+# compare hashes
+whereis kubelet
+sha512sum /usr/bin/kubelet
+sha512sum kubernetes/server/bin/kubelet
+
+----------------------------------------
+Encrypt existing Secrets
+Recreate Secrets so they are encrypted through the new encryption settings
+kubectl -n one get secrets -o json | kubectl replace -f -
+kubectl -n two get secrets -o json | kubectl replace -f -
+kubectl -n three get secrets -o json | kubectl replace -f -
+
+------------------------------
+cat <<EOF | kubectl apply -f -
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: 60099@internal.users
+spec:
+  request: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQ1pEQ0NBVXdDQVFBd0h6RWRNQnNHQTFVRUF3d1VOakF3T1RsQWFXNTBaWEp1WVd3dWRYTmxjbk13Z2dFaQpNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUN0QlR1bkY3aHhyRHNjMUNYZjNBTFJBMGVRClNIbUk2OENmb2xPdXljYk56QTdaU2pKOGUxTGw4ODhGdS9qSWkxVGlpaGtMQzFSWnJ1L011Vy9ENGRVUGhiMngKVnowZUNheEtsVWpwTFBYOXJvenQ5M1hKeThjajh2WWRuVnVBcW90UnpSK0xxNDd3ZHkyMG5tcU1KYmxYeWdmLwpDcjNOaGU0ejRISUF6d2oxZWZBRXltdnFmbWV3ejJBYU9Gbi81YlRvSVZEMDFOTXpBUVRXUlpCMFFrdlFmQitrCitDZXpzRkpOSzhTa3QwREJBNGFvMDdLMVBpYmNHdFZxRUxLWlppVG9tYnprMHdkZXphTEs2WGNOY1ovVWwzSkUKLy81c05xRG41TEdaaWgyOGhheWkxVy90YlUrRGs5eUtORFZ2cGF0eHFOVHRJcnJZei9kTXlDSkdhVE9WQWdNQgpBQUdnQURBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQVFRaDErdStjTGNRZFMzQmxKU3ZxbGFCT3FnVFpDd2RtCk4vL2NTZEdQUGllSEJBOFdTU0QxekN6RFhibUJreldtQ2l1dzdxMnE2Uk0wQ3ZCY25WZ1dVSHVUWC9zRVc4ZjQKaE5qZDcrWmhNNFVjUTFzakxKNjlDSW4yRU1YKzNzakVTT0p1VE9RL1UwWU5PajY3Rk05LzJoQ1l4Q2pvcjRHcQp4N3NQODNhbkxhSzdYS05pcjBXUVlEcFU1RDI0U0F6VElBOElFMXl0eTZLWGpWcFMvVlhhVmUyMHNOU05RSVRMCkRaTW9KQyt1SEtVUEpzWWNjKzVkSnFrbVdDNFcvR05UYUk2emxqQTFXNUdlSXozeXNoekdLYkZMNEEySHRvRWgKaUx2anJCOUxseEN5MGo0OHlnN2F6V09RQ2xBdG41NzZXVlJBbytQTC9XckFqMWVUZWpOQjl3PT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUgUkVRVUVTVC0tLS0tCg==
+  signerName: kubernetes.io/kube-apiserver-client
+  expirationSeconds: 86400  # one day
+  usages:
+  - client auth
+EOF
+
+kubectl get csr 60099@internal.users -o jsonpath='{.status.certificate}'| base64 -d > myuser.crt
+
+
+--------------------------------------------
+➜ root@cluster1-controlplane1:~# ETCDCTL_API=3 etcdctl \
+--cert /etc/kubernetes/pki/apiserver-etcd-client.crt \
+--key /etc/kubernetes/pki/apiserver-etcd-client.key \
+--cacert /etc/kubernetes/pki/etcd/ca.crt get /registry/secrets/team-green/database-access
+
+------------------------------------
+
+curl https://kubernetes.default/api/v1/namespaces/restricted/secrets -H "Authorization: Bearer $(cat /run/secrets/kubernetes.io/serviceaccount/token)" -k
+
+
+------------------
+
+ securityContext:
+   privileged: true
+   readOnlyRootFilesystem: true
+securityContext:
+            allowPrivilegeEscalation: false
+securityContext:
+      privileged: true
+pod.spec
+  serviceAccountName: Test
+  automountServiceAccountToken: false
+
+or in service account field
+
+automountServiceAccountToken: false
+
+apparmor_parser -q profile
+
+k -n ns-secure create secret generic sec-a1 --from-literal user=admin
+
+k -n ns-secure create secret generic sec-a2 --from-file index=/etc/hosts
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: secret-manager
+  name: secret-manager
+  namespace: ns-secure
+spec:
+  volumes:
+    - name: sec-a2
+      secret:
+        secretName: sec-a2
+  serviceAccountName: secret-manager
+  containers:
+    - image: httpd:alpine
+      name: secret-manager
+      volumeMounts:
+        - name: sec-a2
+          mountPath: /etc/sec-a2
+          readOnly: true
+      env:
+        - name: SEC_A1
+          valueFrom:
+            secretKeyRef:
+              name: sec-a1
+              key: user
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always

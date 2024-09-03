@@ -5,6 +5,7 @@ Linux basic commands:
 
  df command
 Use df -- system’s disk space usage, shown in percentage and KBs. If you want to see the report in megabytes, type df -m
+du - disk usage
 
 diff file1.ext file2.ext
 
@@ -16,11 +17,16 @@ kill [signal option] PID.
  top command will display a list of running processes and how much CPU each process use
  
  ps -ef
+ps aux
  
  The command below will help us see if the port 22 is open on the host 192.168.56.5.
 
 $ nc -zv 192.168.1.5 22
 $ netstat -a | more
+
+netstat -tulpan 
+
+lsof -i :22
 
 passwd command is used to create/update passwords for user accounts
 
@@ -110,7 +116,85 @@ ln command is used to create a soft link between files using the -s flag like th
 
 $ ln -s /usr/bin/lscpu cpuinfo
 
+-------------------------------------------------------------------------------
 
+### Syslogs
+https://stackoverflow.com/questions/10979435/where-does-linux-store-my-syslog
+https://www.linuxfoundation.org/blog/blog/classic-sysadmin-viewing-linux-logs-from-the-command-line#:~:text=One%20of%20the%20most%20important,%2Fvar%2Flog%2Fsyslog.
+
+On my Ubuntu machine, I can see the output at /var/log/syslog.
+
+On a RHEL/CentOS machine, the output is found in /var/log/messages.
+
+This is controlled by the rsyslog service, so if this is disabled for some reason you may need to start it with systemctl start rsyslog.
+
+As noted by others, your syslog() output would be logged by the /var/log/syslog file.
+You can see system, user, and other logs at /var/log
+
+ Viewing logs with dmesg
+The dmesg command prints the kernel ring buffer. By default, the command will display all messages from the kernel ring buffer. From the terminal window, issue the command dmesg and the entire kernel ring buffer will print out
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/managing_monitoring_and_updating_the_kernel/getting-started-with-kernel-logging_managing-monitoring-and-updating-the-kernel
+
+------------------------------
+The `journalctl` command is part of the systemd suite of utilities and is used to query and display log messages from the systemd journal. The systemd journal is a centralized logging system that collects and stores log data from various sources, including system services, kernel events, and user applications.
+
+1. To display all logs
+journalctl 
+
+Filtering logs by priority level
+To display log entries based on their priority level, you can use the -p option followed by the desired level (e.g., emerg, alert, crit, err, warning, notice, info, or debug). For instance
+
+journalctl -p warning
+
+-----------------------------------------------
+
+ Understanding Audit Log Files
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-understanding_audit_log_files
+
+------------------------------------------------------------
+
+Mounting filesystem:
+
+https://linuxize.com/post/how-to-mount-and-unmount-file-systems-in-linux/
+
+mount [OPTION...] DEVICE_NAME DIRECTORY
+
+Mounting a File System using /etc/fstab
+
+-----------------------------------
+
+sysctl and systemctl are two completely different things, and none replaced the other. sysctl sets or queries certain kernel parameters (see “man sysctl”), while systemctl allows to communicate with systemd
+
+https://www.baeldung.com/linux/differences-systemctl-service
+
+-----------------------------------
+
+APParmor:
+
+https://www.maketecheasier.com/understanding-apparmor-in-ubuntu-linux/
+
+AppArmor works at the kernel level (check out these tips if you are compiling your own kernel) and loads during the initial bootup. AppArmor handles the permission via Profiles: a set of rules that determines what the program can and cannot do.
+
+There are two modes that the Profiles can run: Enforcement and Complain. The Enforcement mode is a strict enforcement of the policy, which is defined in the profile, and reports policy violation attempts. Complain mode will only report the policy violation attempts and does not enforce the policy
+
+*** Run the following command to start the profiling:
+
+sudo aa-genprof /path/to/application
+/path/to/application is the file path to the application that you want to profile. The default application folder is "/usr/bin," but it could be different depending on the application and install method, such as "/snap/bin."
+
+-------------------------------------------
+
+Parsing is about READING data in one format, so that you can use it to your needs.
+
+https://stackoverflow.com/questions/2933192/what-is-parsing-in-terms-that-a-new-programmer-would-understand
+
+-------------------------
+
+## Falco :
+
+kubectl logs -l app.kubernetes.io/name=falco -n falco -c falco
 
 ###########################################################
     HELM
@@ -136,17 +220,453 @@ $ helm create [Chart]
 
 
 
-
-
-
-
-
-
-
-
 ###################################################
 
 AWS
 
 If connection draining is enabled for the load balancer, the instance stops accepting new connections and waits for existing connections to drain before completing the deregistration process
 
+@@@@@@@@@@@@@@
+terraform
+
+Provider configurations can be defined only in a root Terraform module.
+
+Providers can be passed down to descendent modules in two ways: either implicitly through inheritance, or explicitly via the providers argument within a module block. These two options are discussed in more detail in the following sections
+
+ A Local is only accessible within the local module vs a Terraform variable which can be scoped globally. 
+Another thing to note is that a local in Terraform doesn’t change its value once assigned. A variable value can be manipulated via expressions. 
+This makes it easier to assign expression outputs to locals and use that throughout the code instead of using the expression itself at multiple places.
+ A Local is only accessible within the local module vs a Terraform variable which can be scoped globally. Another thing to note is that a local in Terraform doesn’t change its value once assigned. A variable value can be manipulated via expressions. This makes it easier to assign expression outputs to locals and use that throughout the code instead of using the expression itself at multiple places. A Local is only accessible within the local module vs a Terraform variable which can be scoped globally. Another thing to note is that a local in Terraform doesn’t change its value once assigned. A variable value can be manipulated via expressions. This makes it easier to assign expression outputs to locals and use that throughout the code instead of using the expression itself at multiple places. A Local is only accessible within the local module vs a Terraform variable which can be scoped globally. Another thing to note is that a local in Terraform doesn’t change its value once assigned. A variable value can be manipulated via expressions. This makes it easier to assign expression outputs to locals and use that throughout the code instead of using the expression itself at multiple places. A Local is only accessible within the local module vs a Terraform variable which can be scoped globally. Another thing to note is that a local in Terraform doesn’t change its value once assigned. A variable value can be manipulated via expressions. This makes it easier to assign expression outputs to locals and use that throughout the code instead of using the expression itself at multiple places.
+
+locals {
+  instance_ids = concat(aws_instance.ec1.*.id, aws_instance.ec3.*.id)
+}
+locals {
+  env_tags = {
+    envname = "dev"
+    envteam = "devteam"
+  }
+}
+
+resource "aws_s3_bucket" "my_test_bucket" {
+  bucket = local.bucket_name
+  acl    = "private"
+ 
+  tags = {
+    Name        = local.bucket_name
+    Environment = local.env
+  }
+}
+
+### refactoring and renaminng terraform resource #########
+After renaming the resource or module, you can use the moved block
+
+# Both old and new configuration used "for_each", but the
+# "small" element was renamed to "tiny".
+moved {
+  from = aws_instance.b["small"]
+  to   = aws_instance.b["tiny"]
+}
+
+# The old configuration used "count" and the new configuration
+# uses "for_each", with the following mappings from
+# index to key:
+moved {
+  from = aws_instance.c[0]
+  to   = aws_instance.c["small"]
+}
+moved {
+  from = aws_instance.c[1]
+  to   = aws_instance.c["tiny"]
+}
+
+# The old configuration used "count", and the new configuration
+# uses neither "count" nor "for_each", and you want to keep
+# only the object at index 2.
+moved {
+  from = aws_instance.d[2]
+  to   = aws_instance.d
+}
+#################### import block
+Use the import block to import existing infrastructure resources into Terraform, bringing them under Terraform's management. Unlike the terraform import command, configuration-driven import using import blocks is predictable, works with CICD pipelines, and lets you preview an import operation before modifying state.
+import {
+  to = aws_instance.example
+  id = "i-abcd1234"
+}
+
+resource "aws_instance" "example" {
+  name = "hashi"
+  # (other resource arguments...)
+}
+
+ make backwards-incompatible changes to syntax, the -generate-config-out flag and how Terraform processes imports during the plan stage and generates configuration may change in future releases.
+###########################
+######### Preconditions and Postconditions
+Note: Preconditions and postconditions are available in Terraform v1.2.0 and later.
+
+Use precondition and postcondition blocks to create custom rules for resources, data sources, and outputs.
+
+Terraform checks a precondition before evaluating the object it is associated with and checks a postcondition after evaluating the object. Terraform evaluates custom conditions as early as possible, but must defer conditions that depend on unknown values until the apply phase. Refer to Conditions Checked Only During Apply for more details
+
+data "aws_ami" "example" {
+  id = var.aws_ami_id
+
+  lifecycle {
+    # The AMI ID must refer to an existing AMI that has the tag "nomad-server".
+    postcondition {
+      condition     = self.tags["Component"] == "nomad-server"
+      error_message = "tags[\"Component\"] must be \"nomad-server\"."
+    }
+  }
+}
+
+############# Check blocks
+ can validate your infrastructure outside the usual resource lifecycle. You can add custom conditions via assert blocks, which execute at the end of the plan and apply stages and produce warnings to notify you of problems within your infrastructure.
+
+You can add one or more assert blocks within a check block to verify custom conditions. Each assertion requires a condition argument, a boolean expression that should return true if the intended assumption or guarantee is fulfilled or false if it does not. Your condition expression can refer to any resource, data source, or variable available to the surrounding check block.
+
+check "health_check" {
+  data "http" "terraform_io" {
+    url = "https://www.terraform.io"
+  }
+
+  assert {
+    condition = data.http.terraform_io.status_code == 200
+    error_message = "${data.http.terraform_io.url} returned an unhealthy status code"
+  }
+}
+
+###A splat expression provides a more concise way to express a common operation that could otherwise be performed with a for expression.
+
+If var.list is a list of objects that all have an attribute id, then a list of the ids could be produced with the following for expression:
+
+[for o in var.list : o.id]
+Copy
+This is equivalent to the following splat expression:
+
+var.list[*].id
+
+################### Object Type Attributes
+variable "website_setting" {
+  type = object({
+    index_document = string
+    error_document = string
+  })
+  default = null
+}
+
+resource "aws_s3_bucket" "example" {
+  # ...
+
+  dynamic "website" {
+    for_each = var.website_setting[*]
+    content {
+      index_document = website.value.index_document
+      error_document = website.value.error_document
+    }
+  }
+}
+----------------
+Terraform typically returns an error when it does not receive a value for specified object attributes. When you mark an attribute as optional, Terraform instead inserts a default value for the missing attribute. This allows the receiving module to describe an appropriate fallback behavior.
+
+To mark attributes as optional, use the optional modifier in the object type constraint. The following example creates optional attribute b and optional attribute with a default value c.
+variable "with_optional_attribute" {
+  type = object({
+    a = string                # a required attribute
+    b = optional(string)      # an optional attribute
+    c = optional(number, 127) # an optional attribute with default value
+  })
+}
+
+########################## PACKER ######################
+packer {
+  required_plugins {
+    amazon = {
+      version = ">= 0.0.2"
+      source  = "github.com/hashicorp/amazon"
+    }
+  }
+}
+
+source "amazon-ebs" "ubuntu" {
+  ami_name      = "learn-packer-linux-aws"
+  instance_type = "t2.micro"
+  region        = "us-west-2"
+  source_ami_filter {
+    filters = {
+      name                = "ubuntu/images/*ubuntu-xenial-16.04-amd64-server-*"
+      root-device-type    = "ebs"
+      virtualization-type = "hvm"
+    }
+    most_recent = true
+    owners      = ["099720109477"]
+  }
+  ssh_username = "ubuntu"
+}
+
+build {
+  name    = "learn-packer"
+  sources = [
+    "source.amazon-ebs.ubuntu"
+  ]
+}
+-------------------------------------------------------------------
+The packer {} block contains Packer settings, including specifying a required Packer version.
+
+In addition, you will find required_plugins block in the Packer block, which specifies all the plugins required by the template to build your image. Even though Packer is packaged into a single binary, it depends on plugins for much of its functionality
+
+The source block configures a specific builder plugin, which is then invoked by a build block. Source blocks use builders and communicators to define what kind of virtualization to use, how to launch the image you want to provision, and how to connect to it. Builders and communicators are bundled together and configured side-by-side in a source block
+
+The build block defines what Packer should do with the EC2 instance after it launches.
+
+################ Add provisioner to template
+build {
+  name    = "learn-packer"
+  sources = [
+    "source.amazon-ebs.ubuntu"
+  ]
+
+  provisioner "shell" {
+    environment_vars = [
+      "FOO=hello world",
+    ]
+    inline = [
+      "echo Installing Redis",
+      "sleep 30",
+      "sudo apt-get update",
+      "sudo apt-get install -y redis-server",
+      "echo \"FOO is $FOO\" > example.txt",
+    ]
+  }
+}
+###################
+
+### SHELL script ###
+# Display if the user is the root user or not.
+if [[ "${UID}" -eq 0 ]]
+then
+  echo 'You are root.'
+else
+  echo 'You are not root.'
+fi
+
+# Test if the command succeeded.
+if [[ "${?}" -ne 0 ]]
+then
+  echo 'The id command did not execute successfully.'
+  exit 1
+fi
+
+# Ask for the password.
+read -p 'Enter the password to use for the account: ' PASSWORD
+#    echo "${USER_NAME}:${PASSWORD}" | chpasswd
+echo ${PASSWORD} | passwd --stdin ${USER_NAME}
+# Force password change on first login.
+passwd -e ${USER_NAME}
+
+# An even better password.
+PASSWORD=$(date +%s%N${RANDOM}${RANDOM} | sha256sum | head -c48)
+echo "${PASSWORD}"
+
+# Append a special character to the password.
+SPECIAL_CHARACTER=$(echo '!@#$%^&*()_-+=' | fold -w1 | shuf | head -c1)
+echo "${PASSWORD}${SPECIAL_CHARACTER}"
+
+echo "Discarding STDOUT and STDERR:"
+head -n3 /etc/passwd /fakefile &> /dev/null
+
+
+----------------------------------------------------
+
+CKS Preparation \
+
+-----------------------------------
+
+kubelet version may never exceed the API server version. For example, the kubelet running 1.7.0 should be fully compatible with a 1.8.0 API server, but not vice versa.
+
+# gpg  is the OpenPGP part of the GNU Privacy Guard (GnuPG). It is a tool to provide digital encryption and signing services us‐
+       ing the OpenPGP standard. gpg features complete key management and all the bells and whistles you would  expect  from  a  full
+       OpenPGP implementation.
+       used to validate the image or repo data by using the sign key
+# sudo apt-mark hold kubelet kubeadm kubectl ----> hold is used to mark a package as held back, which will prevent the package from being automatically installed, upgraded or removed. unhold unhold is used to cancel a previously set hold on a package to allow all actions again.
+
+## How to view the linux process and its logs
+https://unix.stackexchange.com/questions/58550/how-to-view-the-output-of-a-running-process-in-another-bash-session
+https://www.baeldung.com/linux/output-process-another-session
+
+apt install auditd
+systemctl start auditd
+https://superuser.com/questions/222912/how-can-i-log-all-process-launches-in-linux
+
+apt list --installed
+
+#systemd has a tight integration with cgroups and allocates a cgroup per systemd unit. As a result, if you use systemd as the init system with the cgroupfs driver, the system gets two different cgroup managers.
+
+# Two cgroup managers result in two views of the available and in-use resources in the system. In some cases, nodes that are configured to use cgroupfs for the kubelet and container runtime, but use systemd for the rest of the processes become unstable under resource pressure.
+# If you configure systemd as the cgroup driver for the kubelet, you must also configure systemd as the cgroup driver for the container runtime.
+
+
+# SHA256sum checking 
+
+https://linuxhint.com/verify-sha256-checksum-file-linux/
+
+root@msp:/tmp# sha256sum -c containerd-1.6.24-linux-amd64.tar.gz.sha256sum
+containerd-1.6.24-linux-amd64.tar.gz: OK
+root@msp:/tmp#
+
+How to encrypt and decrypt with PGP
+
+https://linuxhint.com/encrypt-decrypt-with-pgp/#:~:text=The%20procedure%20of%20encrypting%20and,public%20key%20of%20the%20sender.
+
+
+----------------------------
+
+DISK Ressize :
+
+https://www.geekersdigest.com/how-to-extend-grow-linux-file-systems-without-downtime/#extend-ext4-file-system
+
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/recognize-expanded-volume-linux.html
+df -hT
+sudo growpart /dev/nvme0n1 1
+sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
+
+#### https://www.techrepublic.com/article/how-to-free-disk-space-on-linux-systems/
+ https://www.redhat.com/sysadmin/resize-lvm-simple
+ https://unix.stackexchange.com/questions/585233/lvm-sizes-dont-add-upto-the-partition-size
+physical volume --> Vg --> LV -- mount
+
+root@msp:~# lsblk
+NAME                      MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+loop0                       7:0    0  63.4M  1 loop /snap/core20/1974
+loop1                       7:1    0  63.5M  1 loop /snap/core20/2015
+loop2                       7:2    0  53.3M  1 loop /snap/snapd/19457
+loop3                       7:3    0 111.9M  1 loop /snap/lxd/24322
+loop4                       7:4    0  40.8M  1 loop /snap/snapd/20092
+sda                         8:0    0  20.6G  0 disk
+├─sda1                      8:1    0     1M  0 part
+├─sda2                      8:2    0   1.8G  0 part /boot
+└─sda3                      8:3    0  18.8G  0 part
+  └─ubuntu--vg-ubuntu--lv 253:0    0   8.6G  0 lvm  /
+sr0                        11:0    1  1024M  0 rom
+root@msp:~# swapoff -a
+root@msp:~# sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
+resize2fs 1.46.5 (30-Dec-2021)
+The filesystem is already 2241536 (4k) blocks long.  Nothing to do!
+
+root@msp:~# lvextend -L +10G /dev/mapper/ubuntu--vg-ubuntu--lv
+  Insufficient free space: 2560 extents needed, but only 0 available
+root@msp:~# cfdisk /dev/sda
+
+root@msp:~# vgs
+  VG        #PV #LV #SN Attr   VSize VFree
+  ubuntu-vg   1   1   0 wz--n- 8.55g    0
+root@msp:~# lvs
+  LV        VG        Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  ubuntu-lv ubuntu-vg -wi-ao---- 8.55g
+root@msp:~# pv
+Command 'pv' not found, but can be installed with:
+apt install pv
+root@msp:~# vgextend ubuntu-vg /dev/sda3
+  Physical volume '/dev/sda3' is already in volume group 'ubuntu-vg'
+  Unable to add physical volume '/dev/sda3' to volume group 'ubuntu-vg'
+  /dev/sda3: physical volume not initialized.
+root@msp:~# vgs
+  VG        #PV #LV #SN Attr   VSize VFree
+  ubuntu-vg   1   1   0 wz--n- 8.55g    0
+root@msp:~# vgdisplay
+  --- Volume group ---
+  VG Name               ubuntu-vg
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  2
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                1
+  Open LV               1
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               8.55 GiB
+  PE Size               4.00 MiB
+  Total PE              2189
+  Alloc PE / Size       2189 / 8.55 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               kb6eAn-H26D-d7R7-1wDi-cTVZ-XHLm-Qdahxx
+
+root@msp:~# lvs
+  LV        VG        Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  ubuntu-lv ubuntu-vg -wi-ao---- 8.55g
+root@msp:~# pvresize /dev/sda3
+  Physical volume "/dev/sda3" changed
+  1 physical volume(s) resized or updated / 0 physical volume(s) not resized
+root@msp:~# lvs
+  LV        VG        Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  ubuntu-lv ubuntu-vg -wi-ao---- 8.55g
+root@msp:~# vgs
+  VG        #PV #LV #SN Attr   VSize  VFree
+  ubuntu-vg   1   1   0 wz--n- 18.82g 10.27g
+root@msp:~# lvextend -L +100G /dev/mapper/ubuntu--vg-ubuntu--lv
+  Insufficient free space: 25600 extents needed, but only 2630 available
+root@msp:~# lvresize -l +100%FREE /dev/ubuntu-vg/lv
+  Logical volume lv not found in volume group ubuntu-vg.
+root@msp:~# lvresize -l +100%FREE /dev/ubuntu-vg/-lv
+  Logical volume name "-lv" is invalid.
+  Run `lvresize --help' for more information.
+root@msp:~# lvresize -l +100%FREE /dev/ubuntu-vg/ubuntu--lv
+  Logical volume ubuntu--lv not found in volume group ubuntu-vg.
+root@msp:~# lvresize -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+  Size of logical volume ubuntu-vg/ubuntu-lv changed from 8.55 GiB (2189 extents) to 18.82 GiB (4819 extents).
+  Logical volume ubuntu-vg/ubuntu-lv successfully resized.
+root@msp:~# resize2fs /dev/ubuntu-vg/ubuntu-lv
+resize2fs 1.46.5 (30-Dec-2021)
+Filesystem at /dev/ubuntu-vg/ubuntu-lv is mounted on /; on-line resizing required
+old_desc_blocks = 2, new_desc_blocks = 3
+The filesystem on /dev/ubuntu-vg/ubuntu-lv is now 4934656 (4k) blocks long.
+
+-----------------------------
+
+
+VIM
+cc - change (replace) entire line
+u - undo
+U - restore (undo) last changed line
+Ctrl + r - redo
+
+i - insert before the cursor
+I - insert at the beginning of the line
+a - insert (append) after the cursor
+A - insert (append) at the end of the line
+o - append (open) a new line below the current line
+O - append (open) a new line above the current line
+ea - insert (append) at the end of the word
+Ctrl + h - delete the character before the cursor during insert mode
+Ctrl + w - delete word before the cursor during insert mode
+Ctrl + j - add a line break at the cursor position during insert mode
+Ctrl + t - indent (move right) line one shiftwidth during insert mode
+Ctrl + d - de-indent (move left) line one shiftwidth during insert mode
+Ctrl + n - insert (auto-complete) next match before the cursor during insert mode
+Ctrl + p - insert (auto-complete) previous match before the cursor during insert mode
+Ctrl + rx - insert the contents of register x
+Ctrl + ox - Temporarily enter normal mode to issue one normal-mode command x.
+Esc or Ctrl + c - exit insert mode
+
+Indent text
+>> - indent (move right) line one shiftwidth
+<< - de-indent (move left) line one shiftwidth
+
+Search and replace
+/pattern - search for pattern
+?pattern - search backward for pattern
+\vpattern - 'very magic' pattern: non-alphanumeric characters are interpreted as special regex symbols (no escaping needed)
+n - repeat search in same direction
+N - repeat search in opposite direction
+:%s/old/new/g - replace all old with new throughout file
+:%s/old/new/gc - replace all old with new throughout file with confirmations
+:noh[lsearch] - remove highlighting of search matches
+
+
+-------------------------------------------------
+
+The EXPOSE instruction does not actually publish the port. It functions as a type of documentation between the person who builds the image and the person who runs the container, about which ports are intended to be published. To actually publish the port when running the container, use the -p flag on docker run to publish and map one or more ports, or the -P flag to publish all exposed ports and map them to high-order ports.
